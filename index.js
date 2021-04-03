@@ -79,10 +79,10 @@ function addBed(){
     var loader = new OBJLoader();    
     var mtlLoader = new MTLLoader();
 
-    mtlLoader.load('/3d assets/Bed.mtl',
+    mtlLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/3d%20assets/Bed.mtl",
         function(texture){
             loader.setMaterials(texture);
-            loader.load('/3d assets/Bed.obj',
+            loader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/3d%20assets/Bed.obj",
                 function(bed){
                     bed.scale.set(11.85,12,12);
                     bed.position.x = -345;
@@ -102,10 +102,10 @@ function addSecondBed(){
     var loader = new OBJLoader();    
     var mtlLoader = new MTLLoader();
 
-    mtlLoader.load('/3d assets/Bed.mtl',
+    mtlLoader.load('https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/3d%20assets/Bed.mtl',
         function(texture){
             loader.setMaterials(texture);
-            loader.load('/3d assets/Bed.obj',
+            loader.load('https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/3d%20assets/Bed.obj',
                 function(bed){
                     bed.scale.set(11.85,12,12);
                     bed.position.x = -265;
@@ -135,7 +135,7 @@ function addCeiling(){
 }
 
 function addPainting(){
-    var paintingMaterial = new THREE.MeshLambertMaterial({map:textureLoader.load("/painting.jpg")});
+    var paintingMaterial = new THREE.MeshLambertMaterial({map:textureLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/painting.jpg")});
     var paintingGeometry = new THREE.PlaneGeometry(37,47);
     var painting = new THREE.Mesh(paintingGeometry,paintingMaterial);
     painting.position.y = 50;
