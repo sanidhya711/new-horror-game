@@ -167,7 +167,6 @@ function addCurtains(){
         gltf.scene.position.x = -215;
         gltf.scene.position.z = -325;
         scene.add(gltf.scene);
-        console.log(scene);
     },function(){},
     function(err){console.log(err);});
 }
@@ -180,7 +179,6 @@ function addSecondCurtains(){
         gltf.scene.position.z = -265;
         gltf.scene.rotation.y = Math.PI/2 + 0.3;
         scene.add(gltf.scene);
-        console.log(scene);
     },function(){},
     function(err){console.log(err);});
 }
