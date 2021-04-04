@@ -162,7 +162,7 @@ function ceilingLight(){
 
 function addCurtains(){
     var gltfLoader = new GLTFLoader();
-    gltfLoader.load("/hospital_curtain/scene.gltf",function(gltf){
+    gltfLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/hospital_curtain/scene.gltf",function(gltf){
         gltf.scene.scale.set(15,20,30);
         gltf.scene.position.x = -215;
         gltf.scene.position.z = -325;
@@ -174,7 +174,7 @@ function addCurtains(){
 
 function addSecondCurtains(){
     var gltfLoader = new GLTFLoader();
-    gltfLoader.load("/hospital_curtain/scene.gltf",function(gltf){
+    gltfLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/hospital_curtain/scene.gltf",function(gltf){
         gltf.scene.scale.set(15,20,30);
         gltf.scene.position.x = -258.3;
         gltf.scene.position.z = -265;
