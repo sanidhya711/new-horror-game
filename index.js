@@ -2,8 +2,11 @@ import * as THREE from 'https://unpkg.com/three@0.127.0/build/three.module.js';
 import { PointerLockControls } from 'https://unpkg.com/three@0.127.0/examples/jsm/controls/PointerLockControls.js';
 import { OBJLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/OBJLoader';
 import { MTLLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/MTLLoader';
+import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/FBXLoader';
+import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
 
-var scene,camera,renderer,controls,textureLoader;
+
+var scene,camera,renderer,controls,textureLoader,mixer,clock;
 
 var keyboard = {
     w: false,
@@ -19,8 +22,8 @@ var yIncrement = 0.15;
 function init(){
     camera = new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,500);
     camera.position.y = 35;
-    camera.position.z = -300;
-    camera.position.x = -300
+    camera.position.z = -290;
+    camera.position.x = -310;
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth,window.innerHeight);
     document.body.appendChild(renderer.domElement);
@@ -28,6 +31,7 @@ function init(){
     scene.fog = new THREE.Fog(0x000000,5,200);
     controls = new PointerLockControls(camera,document.body);
     textureLoader = new THREE.TextureLoader();
+    clock = new THREE.Clock();
 }
 function addFloor(){
     var texture = textureLoader.load('floor.jpg');
@@ -146,6 +150,58 @@ function addPainting(){
     scene.add(painting);
 }
 
+function ceilingLight(){
+    const width = 10;
+    const height = 10;
+    const intensity = 10;
+    const rectLight = new THREE.RectAreaLight( 0xffffff, intensity,  width, height );
+    rectLight.position.set( 0, 50, 0 );
+    rectLight.lookAt(0,0,0);
+    scene.add(rectLight)
+}
+
+function addCurtains(){
+    var gltfLoader = new GLTFLoader();
+    gltfLoader.load("/hospital_curtain/scene.gltf",function(gltf){
+        gltf.scene.scale.set(15,20,30);
+        gltf.scene.position.x = -215;
+        gltf.scene.position.z = -325;
+        scene.add(gltf.scene);
+        console.log(scene);
+    },function(){},
+    function(err){console.log(err);});
+}
+
+function addSecondCurtains(){
+    var gltfLoader = new GLTFLoader();
+    gltfLoader.load("/hospital_curtain/scene.gltf",function(gltf){
+        gltf.scene.scale.set(15,20,30);
+        gltf.scene.position.x = -258.3;
+        gltf.scene.position.z = -265;
+        gltf.scene.rotation.y = Math.PI/2 + 0.3;
+        scene.add(gltf.scene);
+        console.log(scene);
+    },function(){},
+    function(err){console.log(err);});
+}
+
+function addZombieModel(){
+    var zombieLoader = new FBXLoader();
+    zombieLoader.load("zombie.fbx",function(zombie){
+
+        zombie.scale.setScalar(0.25);
+        var animLoader = new FBXLoader();
+
+        animLoader.load("walk.fbx",function(anim){
+            mixer = new THREE.AnimationMixer(zombie);
+            var walk = mixer.clipAction(anim.animations[0]);
+            walk.play();
+            scene.add(zombie);
+        });
+
+    });
+}
+
 function moveHandler(){
 
     if(keyboard["w"]){
@@ -214,6 +270,10 @@ window.addEventListener("keyup",function(eve){
 function render(){
     renderer.render(scene,camera);
     moveHandler();
+    if(mixer){
+        var delta = clock.getDelta();
+        mixer.update(delta);
+    }
     requestAnimationFrame(render);
 }
 
@@ -242,6 +302,10 @@ addLights();
 addBed();
 addSecondBed();
 addPainting();
+// ceilingLight();
+addCurtains();
+addSecondCurtains();
+addZombieModel();
 render();
 
 window.addEventListener("resize",resize);
