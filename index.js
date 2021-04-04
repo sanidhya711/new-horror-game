@@ -13,6 +13,8 @@ var keyboard = {
 }
 
 var moveSpeed = 1;
+var ySpeed = 0;
+var yIncrement = 0.15;
 
 function init(){
     camera = new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,500);
@@ -145,27 +147,65 @@ function addPainting(){
 }
 
 function moveHandler(){
+
     if(keyboard["w"]){
         controls.moveForward(moveSpeed);
     }
     if(keyboard["a"]){
         controls.moveRight(-1*moveSpeed);
+        if(camera.position.x < -360 || camera.position.x > 360 || camera.position.z < -360 || camera.position.z > 360){
+            controls.moveRight(moveSpeed);
+        }
     }
     if(keyboard["s"]){
         controls.moveForward(-1*moveSpeed);
+        if(camera.position.x < -360 || camera.position.x > 360 || camera.position.z < -360 || camera.position.z > 360){
+            controls.moveForward(moveSpeed);
+        }
     }
     if(keyboard["d"]){
         controls.moveRight(moveSpeed);
+        if(camera.position.x < -360 || camera.position.x > 360 || camera.position.z < -360 || camera.position.z > 360){
+            controls.moveRight(-1*moveSpeed);
+        }
     }
-    if(keyboard["w"] || keyboard["a"] || keyboard["s"] || keyboard["d"]){
+    if(camera.position.x < -360){
+        camera.position.x = -360;
+    }
+    if(camera.position.x > 360){
+        camera.position.x = 360;
+    }
+    if(camera.position.z < -360){
+        camera.position.z = -360;
+    }
+    if(camera.position.z > 360){
+        camera.position.z = 360;
+    }
+    if(keyboard["w"] || keyboard["a"] || keyboard["s"] || keyboard["d"] && document.getElementById("footsteps").paused){
         document.getElementById("footsteps").play();
-    }else{
+    }else if(!document.getElementById("footsteps").paused){
         document.getElementById("footsteps").pause();
+    }
+
+    camera.position.y = camera.position.y - ySpeed;
+
+    if(camera.position.y > 35){
+        ySpeed = ySpeed + yIncrement;
+    }else{
+        ySpeed = 0;
     }
 }
 
 window.addEventListener("keydown",function(eve){
-    keyboard[eve.key] = true;
+    if(eve.key==" " && ySpeed==0){
+        document.getElementById("jumping").volume = 0.6;
+        document.getElementById("jumping").currentTime = 0;
+        document.getElementById("jumping").play();
+        ySpeed = -3;
+    }
+    else if(eve.key=="w" || eve.key == "a" || eve.key=="s" || eve.key=="d"){
+        keyboard[eve.key] = true;
+    }
 });
 window.addEventListener("keyup",function(eve){
     keyboard[eve.key] = false;
@@ -189,7 +229,7 @@ document.addEventListener("click",function(){
     if(first){
         first = false;
         document.getElementById("bg-music").play();
-        document.getElementById("bg-music").volume = 0.15;
+        document.getElementById("bg-music").volume = 0.7;
     }
     controls.lock();
 });
