@@ -6,7 +6,7 @@ import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/
 import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,previousX;
+var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,previousX,previousZ;
 
 var keyboard = {
     w: false,
@@ -117,6 +117,8 @@ function addSecondBed(){
                     bed.position.x = -265;
                     bed.position.z = -339;
                     bed.rotation.y = Math.PI/2;
+                    var box = new THREE.Box3().setFromObject(bed);
+                    console.log( box.min,box.max,);
                     scene.add(bed)
                 ;},
                 function(xhr){},
@@ -285,13 +287,46 @@ function collisionHandler(){
     }
 
     //check first curtains
-    if(camera.position.z < -284){
-        if(camera.position.x > -225 && camera.position.x < -205 ){
+    if(camera.position.z < -275){
+        if(camera.position.x > -225 && camera.position.x < -210 ){
             camera.position.x = previousX;
         }
     }
 
+    if(camera.position.x > -220 && camera.position.x < -210 ){
+        if(camera.position.z < -275){
+            camera.position.z = previousZ;
+        }
+    }
+
+    //check for bed 1
+    if(camera.position.z < -303){
+        if(camera.position.x > -360 && camera.position.x < -329 ){
+            camera.position.x = previousX;
+        }
+    }
+
+    if(camera.position.x > -360 && camera.position.x < -329 ){
+        if(camera.position.z < -303){
+            camera.position.z = previousZ;
+        }
+    }
+
+    //check for bed 2
+    if(camera.position.z < -303){
+        if(camera.position.x > -280 && camera.position.x < -249 ){
+            camera.position.x = previousX;
+        }
+    }
+
+    if(camera.position.x > -280 && camera.position.x < -249 ){
+        if(camera.position.z < -303){
+            camera.position.z = previousZ;
+        }
+    }
+
     previousX = camera.position.x;
+    previousZ = camera.position.z;
 }
 
 window.addEventListener("keydown",function(eve){
@@ -299,7 +334,7 @@ window.addEventListener("keydown",function(eve){
         document.getElementById("jumping").volume = 0.6;
         document.getElementById("jumping").currentTime = 0;
         document.getElementById("jumping").play();
-        ySpeed = -3;
+        ySpeed = -2.7;
     }
     else if(eve.key=="w" || eve.key == "a" || eve.key=="s" || eve.key=="d"){
         keyboard[eve.key] = true;
@@ -333,6 +368,8 @@ document.addEventListener("click",function(){
         first = false;
         document.getElementById("bg-music").play();
         document.getElementById("bg-music").volume = 0.7;
+        document.getElementById("zombies").play();
+        document.getElementById("zombies").volume = 0.025;
     }
     controls.lock();
 });
