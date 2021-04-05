@@ -4,9 +4,9 @@ import { OBJLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/
 import { MTLLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/MTLLoader';
 import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/FBXLoader';
 import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
+(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-
-var scene,camera,renderer,controls,textureLoader,mixer,clock;
+var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,previousX;
 
 var keyboard = {
     w: false,
@@ -186,18 +186,56 @@ function addSecondCurtains(){
 function addZombieModel(){
     var zombieLoader = new FBXLoader();
     zombieLoader.load("zombie.fbx",function(zombie){
-
         zombie.scale.setScalar(0.25);
         var animLoader = new FBXLoader();
-
         animLoader.load("walk.fbx",function(anim){
             mixer = new THREE.AnimationMixer(zombie);
             var walk = mixer.clipAction(anim.animations[0]);
             walk.play();
             scene.add(zombie);
         });
-
     });
+}
+
+function addNote(){
+    var noteGeometry = new THREE.PlaneGeometry(10,6);
+    var noteMaterial = new THREE.MeshLambertMaterial({map:textureLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/note.png"),transparent:true});
+    note = new THREE.Mesh(noteGeometry,noteMaterial);
+    note.position.z = -256.5;
+    note.position.x = -287;
+    note.position.y = 37;
+    note.rotation.y = Math.PI + 0.3;
+    scene.add(note);
+
+    //hifghlight note on hover
+    var noteHighlightMaterial = new THREE.MeshLambertMaterial({color:'red',transparent:true,opacity:0.5});
+    var noteHighlightGeometry = new THREE.PlaneGeometry(10.7,6.7);
+    noteHighlight = new THREE.Mesh(noteHighlightGeometry,noteHighlightMaterial);
+    noteHighlight.position.z = -256.4;
+    noteHighlight.position.x = -287;
+    noteHighlight.position.y = 37;
+    noteHighlight.rotation.y = Math.PI + 0.3;
+    noteHighlight.visible = false;
+    scene.add(noteHighlight);
+}
+
+function addRaycaster(){
+    raycaster = new THREE.Raycaster();
+    pointer = new THREE.Vector2();
+    pointer.x = 0.5 * 2 - 1;
+	pointer.y = -1 * 0.5 * 2 + 1;
+}
+
+function raycasterHandler(){
+    if(raycaster){
+        raycaster.setFromCamera(pointer,camera);
+        const intersects = raycaster.intersectObject(note)[0];
+        if(intersects && intersects.distance < 35){
+            noteHighlight.visible = true;
+        }else{
+            noteHighlight.visible = false;
+        }
+    }
 }
 
 function moveHandler(){
@@ -207,33 +245,12 @@ function moveHandler(){
     }
     if(keyboard["a"]){
         controls.moveRight(-1*moveSpeed);
-        if(camera.position.x < -360 || camera.position.x > 360 || camera.position.z < -360 || camera.position.z > 360){
-            controls.moveRight(moveSpeed);
-        }
     }
     if(keyboard["s"]){
         controls.moveForward(-1*moveSpeed);
-        if(camera.position.x < -360 || camera.position.x > 360 || camera.position.z < -360 || camera.position.z > 360){
-            controls.moveForward(moveSpeed);
-        }
     }
     if(keyboard["d"]){
         controls.moveRight(moveSpeed);
-        if(camera.position.x < -360 || camera.position.x > 360 || camera.position.z < -360 || camera.position.z > 360){
-            controls.moveRight(-1*moveSpeed);
-        }
-    }
-    if(camera.position.x < -360){
-        camera.position.x = -360;
-    }
-    if(camera.position.x > 360){
-        camera.position.x = 360;
-    }
-    if(camera.position.z < -360){
-        camera.position.z = -360;
-    }
-    if(camera.position.z > 360){
-        camera.position.z = 360;
     }
     if(keyboard["w"] || keyboard["a"] || keyboard["s"] || keyboard["d"] && document.getElementById("footsteps").paused){
         document.getElementById("footsteps").play();
@@ -248,6 +265,33 @@ function moveHandler(){
     }else{
         ySpeed = 0;
     }
+
+    collisionHandler();
+}
+
+function collisionHandler(){
+    //check walls
+    if(camera.position.x < -360){
+        camera.position.x = -360;
+    }
+    if(camera.position.x > 360){
+        camera.position.x = 360;
+    }
+    if(camera.position.z < -360){
+        camera.position.z = -360;
+    }
+    if(camera.position.z > 360){
+        camera.position.z = 360;
+    }
+
+    //check first curtains
+    if(camera.position.z < -284){
+        if(camera.position.x > -225 && camera.position.x < -205 ){
+            camera.position.x = previousX;
+        }
+    }
+
+    previousX = camera.position.x;
 }
 
 window.addEventListener("keydown",function(eve){
@@ -268,6 +312,7 @@ window.addEventListener("keyup",function(eve){
 function render(){
     renderer.render(scene,camera);
     moveHandler();
+    raycasterHandler();
     if(mixer){
         var delta = clock.getDelta();
         mixer.update(delta);
@@ -304,6 +349,8 @@ addPainting();
 addCurtains();
 addSecondCurtains();
 addZombieModel();
+addRaycaster();
+addNote();
 render();
 
 window.addEventListener("resize",resize);
