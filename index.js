@@ -117,8 +117,6 @@ function addSecondBed(){
                     bed.position.x = -265;
                     bed.position.z = -339;
                     bed.rotation.y = Math.PI/2;
-                    var box = new THREE.Box3().setFromObject(bed);
-                    console.log( box.min,box.max,);
                     scene.add(bed)
                 ;},
                 function(xhr){},
@@ -292,35 +290,32 @@ function collisionHandler(){
             camera.position.x = previousX;
         }
     }
-
     if(camera.position.x > -220 && camera.position.x < -210 ){
-        if(camera.position.z < -275){
+        if(camera.position.z < -275 && previousZ > -275){
             camera.position.z = previousZ;
         }
     }
 
     //check for bed 1
-    if(camera.position.z < -303){
+    if(camera.position.z < -301){
         if(camera.position.x > -360 && camera.position.x < -329 ){
             camera.position.x = previousX;
         }
     }
-
     if(camera.position.x > -360 && camera.position.x < -329 ){
-        if(camera.position.z < -303){
+        if(camera.position.z < -300 && previousZ > -300){
             camera.position.z = previousZ;
         }
     }
 
     //check for bed 2
-    if(camera.position.z < -303){
+    if(camera.position.z < -301){
         if(camera.position.x > -280 && camera.position.x < -249 ){
             camera.position.x = previousX;
         }
     }
-
     if(camera.position.x > -280 && camera.position.x < -249 ){
-        if(camera.position.z < -303){
+        if(camera.position.z < -300 && previousZ > -300){
             camera.position.z = previousZ;
         }
     }
@@ -391,3 +386,10 @@ addNote();
 render();
 
 window.addEventListener("resize",resize);
+
+
+// very useful for getting bounds of model
+// var box = new THREE.Box3().setFromObject(bed);
+// console.log( box.min,box.max,);
+// const helper = new THREE.Box3Helper( box, 0xffff00 );
+// scene.add( helper );
