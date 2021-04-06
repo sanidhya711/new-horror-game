@@ -6,7 +6,7 @@ import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/
 import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,previousX,previousZ;
+var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand;
 
 var keyboard = {
     w: false,
@@ -28,7 +28,7 @@ function init(){
     renderer.setSize(window.innerWidth,window.innerHeight);
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000,5,200);
+    // scene.fog = new THREE.Fog(0x000000,5,200);
     controls = new PointerLockControls(camera,document.body);
     textureLoader = new THREE.TextureLoader();
     clock = new THREE.Clock();
@@ -45,7 +45,7 @@ function addFloor(){
     scene.add(floor);
 }
 function addLights(){
-    var light = new THREE.AmbientLight(0xFFFFFF,0.5);
+    var light = new THREE.AmbientLight(0xFFFFFF,1);
     scene.add(light);
 }
 
@@ -150,16 +150,6 @@ function addPainting(){
     scene.add(painting);
 }
 
-function ceilingLight(){
-    const width = 10;
-    const height = 10;
-    const intensity = 10;
-    const rectLight = new THREE.RectAreaLight( 0xffffff, intensity,  width, height );
-    rectLight.position.set( 0, 50, 0 );
-    rectLight.lookAt(0,0,0);
-    scene.add(rectLight)
-}
-
 function addCurtains(){
     var gltfLoader = new GLTFLoader();
     gltfLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/hospital_curtain/scene.gltf",function(gltf){
@@ -186,6 +176,7 @@ function addSecondCurtains(){
 function addZombieModel(){
     var zombieLoader = new FBXLoader();
     zombieLoader.load("zombie.fbx",function(zombie){
+        zombieGlobal = zombie;
         zombie.scale.setScalar(0.25);
         var animLoader = new FBXLoader();
         animLoader.load("walk.fbx",function(anim){
@@ -193,8 +184,22 @@ function addZombieModel(){
             var walk = mixer.clipAction(anim.animations[0]);
             walk.play();
             scene.add(zombie);
+            addZombieAudio();
         });
     });
+}
+
+function addZombieAudio(){
+    const listener = new THREE.AudioListener();
+    camera.add( listener );
+    const sound = new THREE.PositionalAudio( listener );
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load( 'https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/zombies.mp3', function( buffer ) {
+        sound.setBuffer( buffer );
+        sound.setRefDistance(15);
+        sound.play();
+    });
+    zombieGlobal.add(sound);
 }
 
 function addNote(){
@@ -208,7 +213,7 @@ function addNote(){
     scene.add(note);
 
     //hifghlight note on hover
-    var noteHighlightMaterial = new THREE.MeshLambertMaterial({color:'red',transparent:true,opacity:0.5});
+    var noteHighlightMaterial = new THREE.MeshLambertMaterial({color:'white',transparent:true,opacity:0.5});
     var noteHighlightGeometry = new THREE.PlaneGeometry(10.7,6.7);
     noteHighlight = new THREE.Mesh(noteHighlightGeometry,noteHighlightMaterial);
     noteHighlight.position.z = -256.4;
@@ -217,6 +222,54 @@ function addNote(){
     noteHighlight.rotation.y = Math.PI + 0.3;
     noteHighlight.visible = false;
     scene.add(noteHighlight);
+}
+
+function addAxe(){
+    var loader = new GLTFLoader();
+    loader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/axe/scene.gltf",(axeGroup) => {
+        axeGlobal = axeGroup.scene.children[0];
+        var axe = axeGroup.scene.children[0];
+        axe.position.z = -285;
+        axe.position.x = -368;
+        axe.position.y = 32;
+        axe.scale.setScalar(12);
+        axe.rotation.x = Math.PI/2;
+        axe.rotation.y = 2;
+        axe.rotation.z = -1*(Math.PI/2 -0.1);
+        scene.add(axe);
+    });
+}
+
+var once = true;
+
+function handleAxeInHand(){
+    if(axeInHand){
+        if(once){
+            once=false;
+            console.log(axeGlobal);
+        }
+        axeGlobal.position.copy(camera.position);
+        axeGlobal.translateZ(-10); //up - down
+        axeGlobal.translateX(8);//right -left
+        axeGlobal.translateY(-9);//  front - back
+
+
+        var originalVector =  camera.rotation.toVector3();
+        originalVector.z = originalVector.z - 0.1;
+        var newEuler = new THREE.Euler();
+        newEuler.setFromVector3(originalVector);
+        axeGlobal.rotation.copy(newEuler);
+    }
+}
+
+function pickupAxe(){
+    if(canPickUpAxe){
+        axeInHand = true;
+    }
+}
+
+function zombieMovement(){
+    
 }
 
 function addRaycaster(){
@@ -229,11 +282,23 @@ function addRaycaster(){
 function raycasterHandler(){
     if(raycaster){
         raycaster.setFromCamera(pointer,camera);
-        const intersects = raycaster.intersectObject(note)[0];
-        if(intersects && intersects.distance < 35){
+
+        var intersectsNote = raycaster.intersectObject(note)[0];
+        if(intersectsNote && intersectsNote.distance < 35){
             noteHighlight.visible = true;
         }else{
             noteHighlight.visible = false;
+        }
+
+        if(axeGlobal){
+            var intersectsAxe = raycaster.intersectObject(axeGlobal,true)[0];
+            if(intersectsAxe && intersectsAxe.distance < 35){
+                canPickUpAxe = true
+                document.getElementById("messages").style.display = "inline-block";
+            }else{
+                canPickUpAxe = false;
+                document.getElementById("messages").style.display = "none";
+            }
         }
     }
 }
@@ -334,19 +399,24 @@ window.addEventListener("keydown",function(eve){
     else if(eve.key=="w" || eve.key == "a" || eve.key=="s" || eve.key=="d"){
         keyboard[eve.key] = true;
     }
+    if(eve.key=="f"){
+        pickupAxe();
+    }
 });
 window.addEventListener("keyup",function(eve){
     keyboard[eve.key] = false;
 });
 
 function render(){
-    renderer.render(scene,camera);
     moveHandler();
     raycasterHandler();
+    handleAxeInHand();
+
     if(mixer){
         var delta = clock.getDelta();
         mixer.update(delta);
     }
+    renderer.render(scene,camera);
     requestAnimationFrame(render);
 }
 
@@ -363,8 +433,6 @@ document.addEventListener("click",function(){
         first = false;
         document.getElementById("bg-music").play();
         document.getElementById("bg-music").volume = 0.7;
-        document.getElementById("zombies").play();
-        document.getElementById("zombies").volume = 0.025;
     }
     controls.lock();
 });
@@ -377,19 +445,20 @@ addLights();
 addBed();
 addSecondBed();
 addPainting();
-// ceilingLight();
 addCurtains();
 addSecondCurtains();
 addZombieModel();
 addRaycaster();
 addNote();
+addAxe();
+pickupAxe();
+zombieMovement();
 render();
 
 window.addEventListener("resize",resize);
 
 
 // very useful for getting bounds of model
-// var box = new THREE.Box3().setFromObject(bed);
-// console.log( box.min,box.max,);
+// var box = new THREE.Box3().setFromObject(axe.scene);
 // const helper = new THREE.Box3Helper( box, 0xffff00 );
 // scene.add( helper );

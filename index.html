@@ -9,16 +9,27 @@
         body{
             margin: 0;
         }
+        #messages{
+            display: none;
+            position: absolute;
+            top: 40px;
+            left: 250px;
+            z-index: 1;
+            color: #EAEAEA;
+            font-size: 35px;
+        }
     </style>
 </head>
 <body>
+
+    <div id="messages">
+        press f to pickup
+    </div>
 
     <script type="module" src="index.js"></script>
 
     <audio id="bg-music" src="https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/music.mp3" loop></audio>
     <audio id="footsteps" src="https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/footsteps.mp3" loop></audio>
     <audio id="jumping" src="https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/jumping.mp3"></audio>
-    <audio id="zombies" src="https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/zombies.mp3" loop></audio>
-
 </body>
 </html>
