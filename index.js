@@ -28,7 +28,7 @@ function init(){
     renderer.setSize(window.innerWidth,window.innerHeight);
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
-    // scene.fog = new THREE.Fog(0x000000,5,200);
+    scene.fog = new THREE.Fog(0x000000,5,200);
     controls = new PointerLockControls(camera,document.body);
     textureLoader = new THREE.TextureLoader();
     clock = new THREE.Clock();
@@ -45,7 +45,7 @@ function addFloor(){
     scene.add(floor);
 }
 function addLights(){
-    var light = new THREE.AmbientLight(0xFFFFFF,1);
+    var light = new THREE.AmbientLight(0xFFFFFF,0.5);
     scene.add(light);
 }
 
