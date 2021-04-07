@@ -184,7 +184,7 @@ function addZombieModel(){
             var walk = mixer.clipAction(anim.animations[0]);
             walk.play();
             scene.add(zombie);
-            // addZombieAudio();
+            addZombieAudio();
         });
     });
 }
