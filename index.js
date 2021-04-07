@@ -45,7 +45,7 @@ function addFloor(){
     scene.add(floor);
 }
 function addLights(){
-    var light = new THREE.AmbientLight(0xFFFFFF,1);
+    var light = new THREE.AmbientLight(0xFFFFFF,0.5);
     scene.add(light);
 }
 
@@ -243,9 +243,9 @@ function addAxe(){
 function handleAxeInHand(){
     if(axeInHand && !axeAnimationRunning){
         axeGlobal.position.copy(camera.position);
-        axeGlobal.translateZ(-10); //up - down
-        axeGlobal.translateX(8);//right -left
-        axeGlobal.translateY(-9);//  front - back
+        axeGlobal.translateZ(-10);
+        axeGlobal.translateX(8);
+        axeGlobal.translateY(-9);
 
 
         var originalVector =  camera.rotation.toVector3();
@@ -276,20 +276,22 @@ function handleAxeSwing(eve){
 
         startPosition = new THREE.Vector3();
         startPosition.copy(axeGlobal.position);
+        
         var vectorRotation = axeGlobal.rotation.toVector3();
         startRotation = new THREE.Vector3();
         startRotation.copy(vectorRotation);
+
         finalPosition = new THREE.Vector3();   
         finalPosition.copy(axeGlobal.position);     
-        finalPosition.x = finalPosition.x - 12;
-        finalPosition.y  = finalPosition.y - 3;
-        finalPosition.z = finalPosition.z + 2;
+        finalPosition.x = finalPosition.x - 25;
+        finalPosition.y  = finalPosition.y - 5;
+        finalPosition.z = finalPosition.z - 10;
 
         finalRotation = new THREE.Vector3();
         finalRotation.copy(vectorRotation);
-        finalRotation.x = -1 * Math.PI/2 + 0.5;
-        finalRotation.y = 0.5;
-        finalRotation.z = 1;
+        finalRotation.x = -1 * (Math.PI/2 + 0.5);
+        finalRotation.y = Math.PI/3 - 0.5;
+        finalRotation.z = 0;
 
         animationClock = new THREE.Clock();
         playAxeAnimation();
@@ -298,7 +300,8 @@ function handleAxeSwing(eve){
 
 
 function playAxeAnimation(){
-    var delta = Math.round(animationClock.getElapsedTime() * 100)/100;
+    // document.getElementById("axe").play();
+    var delta = (Math.round(animationClock.getElapsedTime() * 100)/100) * 4;
     var currentPosition = new THREE.Vector3().lerpVectors(startPosition,finalPosition,delta);
     var currentRotation = new THREE.Vector3().lerpVectors(startRotation,finalRotation,delta);
     var currentEuler = new THREE.Euler();
@@ -308,7 +311,9 @@ function playAxeAnimation(){
     if(delta<1){
         requestAnimationFrame(playAxeAnimation);
     }else{
-        axeAnimationRunning = false;
+        setTimeout(() => {
+            axeAnimationRunning = false;
+        },200);
     }
 }
 
