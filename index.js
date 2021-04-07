@@ -274,20 +274,19 @@ function handleAxeSwing(eve){
     if(eve.button == 0 && !axeAnimationRunning){
         axeAnimationRunning = true;
 
-        startPosition = axeGlobal.position;
-        startRotation = axeGlobal.rotation.toVector3();
-
-        console.log(startPosition);
-
-        finalPosition = startPosition;        
+        startPosition = new THREE.Vector3();
+        startPosition.copy(axeGlobal.position);
+        var vectorRotation = axeGlobal.rotation.toVector3();
+        startRotation = new THREE.Vector3();
+        startRotation.copy(vectorRotation);
+        finalPosition = new THREE.Vector3();   
+        finalPosition.copy(axeGlobal.position);     
         finalPosition.x = finalPosition.x - 12;
         finalPosition.y  = finalPosition.y - 3;
         finalPosition.z = finalPosition.z + 2;
 
-        console.log(startPosition);
-
-
-        finalRotation = startRotation;
+        finalRotation = new THREE.Vector3();
+        finalRotation.copy(vectorRotation);
         finalRotation.x = -1 * Math.PI/2 + 0.5;
         finalRotation.y = 0.5;
         finalRotation.z = 1;
