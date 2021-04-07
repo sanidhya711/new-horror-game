@@ -6,7 +6,7 @@ import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/
 import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand;
+var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand,axeAnimationRunning,onHighGround;
 
 var keyboard = {
     w: false,
@@ -45,7 +45,7 @@ function addFloor(){
     scene.add(floor);
 }
 function addLights(){
-    var light = new THREE.AmbientLight(0xFFFFFF,0.5);
+    var light = new THREE.AmbientLight(0xFFFFFF,1);
     scene.add(light);
 }
 
@@ -184,7 +184,7 @@ function addZombieModel(){
             var walk = mixer.clipAction(anim.animations[0]);
             walk.play();
             scene.add(zombie);
-            addZombieAudio();
+            // addZombieAudio();
         });
     });
 }
@@ -240,14 +240,8 @@ function addAxe(){
     });
 }
 
-var once = true;
-
 function handleAxeInHand(){
-    if(axeInHand){
-        if(once){
-            once=false;
-            console.log(axeGlobal);
-        }
+    if(axeInHand && !axeAnimationRunning){
         axeGlobal.position.copy(camera.position);
         axeGlobal.translateZ(-10); //up - down
         axeGlobal.translateX(8);//right -left
@@ -265,11 +259,58 @@ function handleAxeInHand(){
 function pickupAxe(){
     if(canPickUpAxe){
         axeInHand = true;
+        window.addEventListener("mousedown",handleAxeSwing)
     }
 }
 
 function zombieMovement(){
     
+}
+
+var startPosition,finalPosition,startRotation,finalRotation;
+var animationClock;
+
+function handleAxeSwing(eve){
+    if(eve.button == 0 && !axeAnimationRunning){
+        axeAnimationRunning = true;
+
+        startPosition = axeGlobal.position;
+        startRotation = axeGlobal.rotation.toVector3();
+
+        console.log(startPosition);
+
+        finalPosition = startPosition;        
+        finalPosition.x = finalPosition.x - 12;
+        finalPosition.y  = finalPosition.y - 3;
+        finalPosition.z = finalPosition.z + 2;
+
+        console.log(startPosition);
+
+
+        finalRotation = startRotation;
+        finalRotation.x = -1 * Math.PI/2 + 0.5;
+        finalRotation.y = 0.5;
+        finalRotation.z = 1;
+
+        animationClock = new THREE.Clock();
+        playAxeAnimation();
+    }
+}
+
+
+function playAxeAnimation(){
+    var delta = Math.round(animationClock.getElapsedTime() * 100)/100;
+    var currentPosition = new THREE.Vector3().lerpVectors(startPosition,finalPosition,delta);
+    var currentRotation = new THREE.Vector3().lerpVectors(startRotation,finalRotation,delta);
+    var currentEuler = new THREE.Euler();
+    currentEuler.setFromVector3(currentRotation); 
+    axeGlobal.position.copy(currentPosition);
+    axeGlobal.rotation.copy(currentEuler);
+    if(delta<1){
+        requestAnimationFrame(playAxeAnimation);
+    }else{
+        axeAnimationRunning = false;
+    }
 }
 
 function addRaycaster(){
@@ -325,7 +366,7 @@ function moveHandler(){
 
     camera.position.y = camera.position.y - ySpeed;
 
-    if(camera.position.y > 35){
+    if(camera.position.y > 35 && !onHighGround){
         ySpeed = ySpeed + yIncrement;
     }else{
         ySpeed = 0;
@@ -367,6 +408,7 @@ function collisionHandler(){
             camera.position.x = previousX;
         }
     }
+
     if(camera.position.x > -360 && camera.position.x < -329 ){
         if(camera.position.z < -300 && previousZ > -300){
             camera.position.z = previousZ;
@@ -452,7 +494,7 @@ addRaycaster();
 addNote();
 addAxe();
 pickupAxe();
-zombieMovement();
+// zombieMovement();
 render();
 
 window.addEventListener("resize",resize);
