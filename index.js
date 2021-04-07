@@ -6,7 +6,7 @@ import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/
 import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand,axeAnimationRunning,onHighGround;
+var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand,axeAnimationRunning,onHighGround,canGetInCar,driving,carGlobal;
 
 var keyboard = {
     w: false,
@@ -22,13 +22,13 @@ var yIncrement = 0.15;
 function init(){
     camera = new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,500);
     camera.position.y = 35;
-    camera.position.z = -290;
+    camera.position.z = 700;
     camera.position.x = -310;
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth,window.innerHeight);
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000,5,200);
+    // scene.fog = new THREE.Fog(0x000000,5,200);
     controls = new PointerLockControls(camera,document.body);
     textureLoader = new THREE.TextureLoader();
     clock = new THREE.Clock();
@@ -45,7 +45,7 @@ function addFloor(){
     scene.add(floor);
 }
 function addLights(){
-    var light = new THREE.AmbientLight(0xFFFFFF,0.5);
+    var light = new THREE.AmbientLight(0xFFFFFF,1);
     scene.add(light);
 }
 
@@ -78,7 +78,7 @@ function addWalls(){
     scene.add(wallLeft);
     scene.add(wallRight);
     scene.add(wallFront);
-    scene.add(wallBehind);
+    // scene.add(wallBehind);
 }
 
 function addBed(){
@@ -267,6 +267,71 @@ function zombieMovement(){
     
 }
 
+function addGrass(){
+    textureLoader.load("/grass.jpg",(texture)=>{
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(8,8);
+        var grassMaterial = new THREE.MeshLambertMaterial({map:texture,side:THREE.DoubleSide});
+        var grassGeometry = new THREE.PlaneGeometry(750,750);
+        var grass = new THREE.Mesh(grassGeometry,grassMaterial);
+        grass.position.z  = 750;
+        grass.rotation.x = Math.PI/2;
+        scene.add(grass);
+    });
+}
+
+function addCar(){
+    var loader = new GLTFLoader();
+    loader.load("/car/scene.gltf",(car)=>{
+        carGlobal = car.scene;
+        car.scene.scale.setScalar(0.2);
+        car.scene.position.z = 800;
+        car.scene.position.y = 1;
+        scene.add(car.scene);
+    });
+}
+
+function handleEnterCar(){
+    if(!driving){
+        if(camera.position.z < 880 && camera.position.z > 700){
+            if(camera.position.x > -60 && camera.position.x < 50){
+                if(!driving){
+                    canGetInCar = true;
+                    document.getElementById("messages").innerText="press f to enter car";
+                    document.getElementById("messages").style.display = "inline-block";
+                }
+            }else{
+                canGetInCar = false;
+            }
+        }
+    }
+}
+
+function getInCar(){
+    if(canGetInCar){
+        canGetInCar = false;
+        camera.position.y = 100;
+        camera.position.z = camera.position.z -100;
+        camera.position.x = 0;
+        driving = true;
+        document.getElementById("messages").innerText="press f to exit car";
+        document.getElementById("messages").style.display = "inline-block";
+    }
+}
+
+function exitCar(){
+    if(driving){
+        camera.position.y = 35;
+        camera.position.z = carGlobal.position.z;
+        camera.position.x = carGlobal.position.x;
+        camera.rotation.copy(carGlobal.rotation);
+        camera.rotation.y = carGlobal.rotation.y + Math.PI;
+        camera.translateX(50);
+        driving = false;
+    }
+}
+
 var startPosition,finalPosition,startRotation,finalRotation;
 var animationClock;
 
@@ -342,41 +407,71 @@ function raycasterHandler(){
                 document.getElementById("messages").style.display = "inline-block";
             }else{
                 canPickUpAxe = false;
-                document.getElementById("messages").style.display = "none";
             }
         }
     }
 }
 
 function moveHandler(){
+    if(!driving){
+        if(keyboard["w"]){
+            controls.moveForward(moveSpeed);
+        }
+        if(keyboard["a"]){
+            controls.moveRight(-1*moveSpeed);
+        }
+        if(keyboard["s"]){
+            controls.moveForward(-1*moveSpeed);
+        }
+        if(keyboard["d"]){
+            controls.moveRight(moveSpeed);
+        }
+        if(keyboard["w"] || keyboard["a"] || keyboard["s"] || keyboard["d"] && document.getElementById("footsteps").paused){
+            document.getElementById("footsteps").play();
+        }else if(!document.getElementById("footsteps").paused){
+            document.getElementById("footsteps").pause();
+        }
+    
+        camera.position.y = camera.position.y - ySpeed;
+    
+        if(camera.position.y > 35 && !onHighGround){
+            ySpeed = ySpeed + yIncrement;
+        }else{
+            ySpeed = 0;
+        }
+    
+        collisionHandler();
+    }
+}
 
-    if(keyboard["w"]){
-        controls.moveForward(moveSpeed);
+function carMoveHandler(){
+    if(driving){
+        //move forward
+        if(keyboard["w"]){
+            carGlobal.translateZ(2);
+            camera.position.copy(carGlobal.position);
+            camera.translateZ(100);
+            camera.position.y = 100;
+        }
+        //move backwards
+        if(keyboard["s"]){
+            carGlobal.translateZ(-2);
+            camera.position.copy(carGlobal.position);
+            camera.translateZ(100);
+            camera.position.y = 100;
+        }
+        // rotate left
+        if(keyboard["a"]){
+            if(carGlobal.rotation.y < Math.PI/2){
+                carGlobal.rotation.y = carGlobal.rotation.y + 0.005;
+            }
+        }
+        if(keyboard["d"]){
+            if(carGlobal.rotation.y > -1*Math.PI/2){
+                carGlobal.rotation.y = carGlobal.rotation.y - 0.005;
+            }
+        }
     }
-    if(keyboard["a"]){
-        controls.moveRight(-1*moveSpeed);
-    }
-    if(keyboard["s"]){
-        controls.moveForward(-1*moveSpeed);
-    }
-    if(keyboard["d"]){
-        controls.moveRight(moveSpeed);
-    }
-    if(keyboard["w"] || keyboard["a"] || keyboard["s"] || keyboard["d"] && document.getElementById("footsteps").paused){
-        document.getElementById("footsteps").play();
-    }else if(!document.getElementById("footsteps").paused){
-        document.getElementById("footsteps").pause();
-    }
-
-    camera.position.y = camera.position.y - ySpeed;
-
-    if(camera.position.y > 35 && !onHighGround){
-        ySpeed = ySpeed + yIncrement;
-    }else{
-        ySpeed = 0;
-    }
-
-    collisionHandler();
 }
 
 function collisionHandler(){
@@ -390,9 +485,9 @@ function collisionHandler(){
     if(camera.position.z < -360){
         camera.position.z = -360;
     }
-    if(camera.position.z > 360){
-        camera.position.z = 360;
-    }
+    // if(camera.position.z > 360){
+    //     camera.position.z = 360;
+    // }
 
     //check first curtains
     if(camera.position.z < -275){
@@ -447,6 +542,8 @@ window.addEventListener("keydown",function(eve){
     }
     if(eve.key=="f"){
         pickupAxe();
+        exitCar();
+        getInCar();
     }
 });
 window.addEventListener("keyup",function(eve){
@@ -455,8 +552,10 @@ window.addEventListener("keyup",function(eve){
 
 function render(){
     moveHandler();
+    carMoveHandler()
     raycasterHandler();
     handleAxeInHand();
+    handleEnterCar();
 
     if(mixer){
         var delta = clock.getDelta();
@@ -497,7 +596,10 @@ addZombieModel();
 addRaycaster();
 addNote();
 addAxe();
+addGrass();
 pickupAxe();
+addCar();
+getInCar();
 // zombieMovement();
 render();
 
@@ -505,6 +607,8 @@ window.addEventListener("resize",resize);
 
 
 // very useful for getting bounds of model
-// var box = new THREE.Box3().setFromObject(axe.scene);
-// const helper = new THREE.Box3Helper( box, 0xffff00 );
+// var box = new THREE.Box3().setFromObject(car.scene);
+// const helper = new THREE.Box3Helper(box,0xffff00);
 // scene.add( helper );
+// console.log(box.max);
+// console.log(box.min);
