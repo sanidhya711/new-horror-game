@@ -268,7 +268,7 @@ function zombieMovement(){
 }
 
 function addGrass(){
-    textureLoader.load("/grass.jpg",(texture)=>{
+    textureLoader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/grass.jpg",(texture)=>{
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(8,8);
