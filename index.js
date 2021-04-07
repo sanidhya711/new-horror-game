@@ -283,7 +283,7 @@ function addGrass(){
 
 function addCar(){
     var loader = new GLTFLoader();
-    loader.load("/car/scene.gltf",(car)=>{
+    loader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/car/scene.gltf",(car)=>{
         carGlobal = car.scene;
         car.scene.scale.setScalar(0.2);
         car.scene.position.z = 800;
