@@ -353,7 +353,6 @@ function handleOpenDoor(){
         document.getElementById("messages").style.display = "inline-block";
     }else{
         canOpenDoor = false;
-        document.getElementById("messages").style.display = "none";
     }
 }
 
@@ -454,6 +453,7 @@ function raycasterHandler(){
             var intersectsAxe = raycaster.intersectObject(axeGlobal,true)[0];
             if(intersectsAxe && intersectsAxe.distance < 35){
                 canPickUpAxe = true
+                document.getElementById("messages").innerText="press f to pickup";
                 document.getElementById("messages").style.display = "inline-block";
             }else{
                 canPickUpAxe = false;
@@ -608,6 +608,10 @@ function render(){
     handleAxeInHand();
     handleOpenDoor();
     handleEnterCar();
+
+    if(!canOpenDoor && !canGetInCar && !canPickUpAxe){
+        document.getElementById("messages").style.display = "none";
+    }
 
     if(mixer){
         var delta = clock.getDelta();
