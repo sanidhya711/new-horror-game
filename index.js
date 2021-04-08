@@ -6,7 +6,7 @@ import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/
 import { GLTFLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/GLTFLoader';
 (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-var scene,camera,renderer,controls,textureLoader,mixer,clock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand,axeAnimationRunning,onHighGround,canGetInCar,driving,carGlobal;
+var scene,camera,renderer,controls,textureLoader,mixer,clock,doorAnimationClock,raycaster,pointer,note,noteHighlight,axeGlobal,previousX,previousZ,canPickUpAxe,zombieGlobal,axeInHand,axeAnimationRunning,onHighGround,canGetInCar,driving,carGlobal,doorAnimationMixer,openDoorAnimation,closeDoorAnimation,canOpenDoor,isDoorOpen;
 
 var keyboard = {
     w: false,
@@ -22,8 +22,8 @@ var yIncrement = 0.15;
 function init(){
     camera = new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,500);
     camera.position.y = 35;
-    camera.position.z = 700;
-    camera.position.x = -310;
+    camera.position.z = 30;
+    // camera.position.x = -310;
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth,window.innerHeight);
     document.body.appendChild(renderer.domElement);
@@ -32,6 +32,7 @@ function init(){
     controls = new PointerLockControls(camera,document.body);
     textureLoader = new THREE.TextureLoader();
     clock = new THREE.Clock();
+    doorAnimationClock = new THREE.Clock();
 }
 function addFloor(){
     var texture = textureLoader.load('floor.jpg');
@@ -45,7 +46,7 @@ function addFloor(){
     scene.add(floor);
 }
 function addLights(){
-    var light = new THREE.AmbientLight(0xFFFFFF,0.5);
+    var light = new THREE.AmbientLight(0xFFFFFF,1);
     scene.add(light);
 }
 
@@ -180,6 +181,7 @@ function addZombieModel(){
         zombie.scale.setScalar(0.25);
         var animLoader = new FBXLoader();
         animLoader.load("walk.fbx",function(anim){
+            zombie.position.x = 100;
             mixer = new THREE.AnimationMixer(zombie);
             var walk = mixer.clipAction(anim.animations[0]);
             walk.play();
@@ -281,6 +283,38 @@ function addGrass(){
     });
 }
 
+function addDoor(){
+    var loader = new FBXLoader();
+    loader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/door/Door.fbx",(door)=>{
+        door.scale.setScalar(0.05);
+        scene.add(door);
+        console.log(door);
+        doorAnimationMixer = new THREE.AnimationMixer(door);
+        openDoorAnimation = doorAnimationMixer.clipAction(door.animations[1]);
+        openDoorAnimation.loop = THREE.LoopOnce;
+        openDoorAnimation.clampWhenFinished = true;
+        closeDoorAnimation = doorAnimationMixer.clipAction(door.animations[0]);
+        closeDoorAnimation.loop = THREE.LoopOnce;
+        closeDoorAnimation.clampWhenFinished = true;
+    });
+}
+
+function openDoor(){
+    if(canOpenDoor && !isDoorOpen){
+        isDoorOpen = true;
+        openDoorAnimation.stop();
+        openDoorAnimation.play();
+    }else{
+        closeDoor();
+    }
+}
+
+function closeDoor(){
+    isDoorOpen = false;
+    closeDoorAnimation.stop();
+    closeDoorAnimation.play();
+}
+
 function addCar(){
     var loader = new GLTFLoader();
     loader.load("https://raw.githubusercontent.com/sanidhya711/new-horror-game/master/car/scene.gltf",(car)=>{
@@ -307,6 +341,22 @@ function handleEnterCar(){
         }
     }
 }
+
+function handleOpenDoor(){
+    if(camera.position.x > -20 && camera.position.x < 20 && camera.position.z > -40 && camera.position.z < 40){
+        canOpenDoor = true;
+        if(!isDoorOpen){
+            document.getElementById("messages").innerText="press f to open door";
+        }else{
+            document.getElementById("messages").innerText="press f to close door";
+        }
+        document.getElementById("messages").style.display = "inline-block";
+    }else{
+        canOpenDoor = false;
+        document.getElementById("messages").style.display = "none";
+    }
+}
+
 
 function getInCar(){
     if(canGetInCar){
@@ -544,6 +594,7 @@ window.addEventListener("keydown",function(eve){
         pickupAxe();
         exitCar();
         getInCar();
+        openDoor();
     }
 });
 window.addEventListener("keyup",function(eve){
@@ -555,11 +606,16 @@ function render(){
     carMoveHandler()
     raycasterHandler();
     handleAxeInHand();
+    handleOpenDoor();
     handleEnterCar();
 
     if(mixer){
         var delta = clock.getDelta();
         mixer.update(delta);
+    }
+    if(doorAnimationMixer){
+        var delta = doorAnimationClock.getDelta();
+        doorAnimationMixer.update(delta);
     }
     renderer.render(scene,camera);
     requestAnimationFrame(render);
@@ -597,18 +653,16 @@ addRaycaster();
 addNote();
 addAxe();
 addGrass();
+addDoor();
 pickupAxe();
 addCar();
-getInCar();
 // zombieMovement();
 render();
 
 window.addEventListener("resize",resize);
 
 
-// very useful for getting bounds of model
-// var box = new THREE.Box3().setFromObject(car.scene);
-// const helper = new THREE.Box3Helper(box,0xffff00);
-// scene.add( helper );
-// console.log(box.max);
-// console.log(box.min);
+// var box = new THREE.Box3().setFromObject(door);
+// var helper = new THREE.BoxHelper(box,0xffff00);
+// scene.add(helper);
+// console.log(box.min,box.max);
